@@ -10,11 +10,13 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.17.2",
+    "download": "^6.2.5",
     "express": "^4.15.3",
     "lodash": "^4.17.4",
     "node-fetch": "^1.7.1",
     "stopword": "^0.1.6",
     "unfluff": "^1.1.0",
-    "watson-developer-cloud": "^2.33.0"
+    "watson-developer-cloud": "^2.33.0",
+    "website-scraper": "^3.1.0"
   }
 }
