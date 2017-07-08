@@ -42,7 +42,7 @@ function eq(a, b){
     }
 
     if (count >= threshold){
-        console.log(a, b)
+        //console.log(a, b)
         return true
     }
     return false
@@ -56,7 +56,7 @@ function matcher(a, b){
         {
             if (eq(s,t)){
                 matches++
-                console.log(`${s}, ${t}`)
+                //console.log(`${s}, ${t}`)
             }
         }
     }
@@ -113,7 +113,7 @@ function prepareResponse(certainty){
     if(certainty.authentic){
         response += templates.src_ok
     }
-    else{
+    else {
         response += templates.src_notok
     }
     return response;
@@ -140,12 +140,15 @@ function isValid(url){
     console.log("parsed", parsedUrl)
     var short = parsedUrl.substr(4)
     console.log("short", short)
-    if(validSources.hasOwnProperty(parsedUrl) || validSources.hasOwnProperty(short)){
-        return false
-    }
-    else{
-        return true
-    }
+    // if(validSources.hasOwnProperty(parsedUrl) || validSources.hasOwnProperty(short)){
+    //     return false
+    // }
+    // else{
+    //     return true
+    // }
+    console.log(validSources[parsedUrl]);
+    console.log(validSources[short]);
+    return (validSources[parsedUrl] || validSources[short]);
 }
 
 src = src.toLowerCase()
@@ -164,7 +167,8 @@ app.post('/', (req, res) => {
             return res.text()
         }).then(function(body) {
             data = extractor(body, 'en');
-            authentic = isValid(url)
+            authentic = !isValid(url);
+            console.log("auth"+authentic);
             // scrape({
             //     urls: [url],
             //     directory: './server/img',
@@ -221,7 +225,8 @@ app.post('/', (req, res) => {
                     console.log('Emotion', emotionalRange)
 
                     res.header('Access-Control-Allow-Origin', "*");
-                    cert = analyseScores({inputMatchSrc, srcTokensHit, fear, disgust, anger, emotionalRange, authentic});
+                    cert = analyseScores({inputMatchSrc, srcTokensHit, fear, disgust, anger, emotionalRange});
+                    cert.authentic = authentic;
                     res.status(200).send(prepareResponse(cert))
                 }
             })
