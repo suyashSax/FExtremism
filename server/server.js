@@ -9,6 +9,7 @@ var scrape = require('website-scraper');
 const fs = require('fs');
 const download = require('download');
 const sizeOf = require('image-size');
+var validSources = require('./sources.json')
 
 var app = express()
 const port = process.env.PORT || 3000
@@ -63,13 +64,22 @@ function matcher(a, b){
 }
 
 function analyseScores(scores){
-    fear_factor = scores.fear >= 0.52;
-    disgust_factor = scores.disgust >= 0.52;
-    anger_factor = scores.anger >= 0.52;
+    fear_factor = scores.fear >= 0.50;
+    disgust_factor = scores.disgust >= 0.50;
+    anger_factor = scores.anger >= 0.50;
 
     sum = fear_factor + disgust_factor + anger_factor;
 
-    tone_certainty = sum / 3;
+    var max = Math.max(fear_factor, disgust_factor, anger_factor);
+
+
+    if (max >= 0.5){
+        tone_certainty = max
+    }
+    else
+    {
+        tone_certainty = sum / 3
+    }
 
     return {tone_certainty:tone_certainty, keyword_certainty:inputMatchSrc}
 }
@@ -99,7 +109,43 @@ function prepareResponse(certainty){
     else{
         response += templates.txt_ok;
     }
+
+    if(certainty.authentic){
+        response += templates.src_ok
+    }
+    else{
+        response += templates.src_notok
+    }
     return response;
+}
+
+function isValid(url){
+    var trace = 0
+    var i = 0
+    var start, end
+    for (var letter of url){
+        if (letter === '/'){
+            i++
+            if (i == 2){
+                start = trace
+            }
+            if (i == 3){
+                end = trace
+            }
+        }
+        trace++
+    }
+    var parsedUrl = url.substr(start+1, end)
+    parsedUrl = parsedUrl.split('/')[0]
+    console.log("parsed", parsedUrl)
+    var short = parsedUrl.substr(4)
+    console.log("short", short)
+    if(validSources.hasOwnProperty(parsedUrl) || validSources.hasOwnProperty(short)){
+        return false
+    }
+    else{
+        return true
+    }
 }
 
 src = src.toLowerCase()
@@ -109,7 +155,7 @@ var parsedSrc = sw.removeStopwords(srcTokens)
 app.use(bodyParser.json())
 var data
 var html
-var inputMatchSrc, srcTokensHit, fear, disgust, tone, anger, emotionalRange
+var inputMatchSrc, srcTokensHit, fear, disgust, tone, anger, emotionalRange, authentic
 
 app.post('/', (req, res) => {
     var url = req.body.url
@@ -118,39 +164,38 @@ app.post('/', (req, res) => {
             return res.text()
         }).then(function(body) {
             data = extractor(body, 'en');
-
-            scrape({
-                urls: [url],
-                directory: './server/img',
-                sources: [
-                    {selector: 'img', attr: 'src'}
-                ]
-            }).then(function (){
-                // var dimensions = sizeOf('images/*.jpg');
-                //     console.log(dimensions.width, dimensions.height);
-            //     var params = {
-            //         images_file: fs.createReadStream('./server/images'),
-            //         classifier_ids: ['Terrorism2_1310302581'],
-            //         owners: ["me"],
-            //         threshold: 0.0
-            //     }
-            //
-            // visual_recognition.classify(params, function(err, res) {
-            //     if (err)
-            //         console.log(err)
-            //     else
-            //     {
-            //         // var is = res.images[0].classifiers[0].classes[0].score
-            //         // var nazi = res.images[0].classifiers[0].classes[1].score
-            //         // var violence = res.images[0].classifiers[0].classes[2].score
-            //         // imageClass = {
-            //         //     is, nazi, violence
-            //         // }
-            //         // console.log(imageClass)
-            //     }})
-            }).catch(console.log)
+            authentic = isValid(url)
+            // scrape({
+            //     urls: [url],
+            //     directory: './server/img',
+            //     sources: [
+            //         {selector: 'img', attr: 'src'}
+            //     ]
+            // }).then(function (){
+            //     // var dimensions = sizeOf('images/*.jpg');
+            //     //     console.log(dimensions.width, dimensions.height);
+            // //     var params = {
+            // //         images_file: fs.createReadStream('./server/images'),
+            // //         classifier_ids: ['Terrorism2_1310302581'],
+            // //         owners: ["me"],
+            // //         threshold: 0.0
+            // //     }
+            // //
+            // // visual_recognition.classify(params, function(err, res) {
+            // //     if (err)
+            // //         console.log(err)
+            // //     else
+            // //     {
+            // //         // var is = res.images[0].classifiers[0].classes[0].score
+            // //         // var nazi = res.images[0].classifiers[0].classes[1].score
+            // //         // var violence = res.images[0].classifiers[0].classes[2].score
+            // //         // imageClass = {
+            // //         //     is, nazi, violence
+            // //         // }
+            // //         // console.log(imageClass)
+            // //     }})
+            // }).catch(console.log)
             var input = data.text
-            console.log("data", input)
             var inputTokens = input.split(" ")
             var parsedInput = sw.removeStopwords(inputTokens)
 
@@ -176,7 +221,7 @@ app.post('/', (req, res) => {
                     console.log('Emotion', emotionalRange)
 
                     res.header('Access-Control-Allow-Origin', "*");
-                    cert = analyseScores({inputMatchSrc, srcTokensHit, fear, disgust, anger, emotionalRange});
+                    cert = analyseScores({inputMatchSrc, srcTokensHit, fear, disgust, anger, emotionalRange, authentic});
                     res.status(200).send(prepareResponse(cert))
                 }
             })
