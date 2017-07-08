@@ -62,6 +62,46 @@ function matcher(a, b){
     return matches
 }
 
+function analyseScores(scores){
+    fear_factor = scores.fear >= 0.52;
+    disgust_factor = scores.disgust >= 0.52;
+    anger_factor = scores.anger >= 0.52;
+
+    sum = fear_factor + disgust_factor + anger_factor;
+
+    tone_certainty = sum / 3;
+
+    return {tone_certainty:tone_certainty, keyword_certainty:inputMatchSrc}
+}
+
+templates = {
+    src_notok:"<p id='src-notok' class='label label-danger'> The sources are unreliable </p>",
+    src_ok:"<p id='src-ok' class='label label-success'> The sources are reliable </p>",
+    tone_notok: "<p id='tone-notok' class='label label-danger'> The tone of the article is aggressive </p>",
+    tone_ok: "<p id='tone-ok' class='label label-success'> The tone of the article is not aggressive </p>",
+    img_notok:"<p id='img-notok' class='label label-danger'> The images may be graphic </p>",
+    img_ok:"<p id='img-ok' class='label label-success'> The images are not graphic </p>",
+    txt_notok:"<p id='txt-notok' class='label label-danger'> May contain propoganda </p>",
+    txt_ok:"<p id='txt-ok' class='label label-success'> Does not contain propoganda </p>"
+}
+
+function prepareResponse(certainty){
+    var response = '';
+    if (certainty.tone_certainty >= 0.50){
+        response += templates.tone_notok;
+    }
+    else{
+        response += templates.tone_ok;
+    }
+    if (certainty.keyword_certainty >= 0.50){
+        response += templates.txt_notok;
+    }
+    else{
+        response += templates.txt_ok;
+    }
+    return response;
+}
+
 src = src.toLowerCase()
 var srcTokens = src.split(" ")
 var parsedSrc = sw.removeStopwords(srcTokens)
@@ -136,7 +176,8 @@ app.post('/', (req, res) => {
                     console.log('Emotion', emotionalRange)
 
                     res.header('Access-Control-Allow-Origin', "*");
-                    res.status(200).send({inputMatchSrc, srcTokensHit, fear, disgust, anger, emotionalRange})
+                    cert = analyseScores({inputMatchSrc, srcTokensHit, fear, disgust, anger, emotionalRange});
+                    res.status(200).send(prepareResponse(cert))
                 }
             })
             console.log("Done...")
