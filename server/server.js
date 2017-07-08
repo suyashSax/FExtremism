@@ -8,9 +8,10 @@ const ToneAnalyzerV3 = require('watson-developer-cloud/tone-analyzer/v3')
 var scrape = require('website-scraper');
 const fs = require('fs');
 const download = require('download');
+const sizeOf = require('image-size');
 
 var app = express()
-const port = 3000
+const port = process.env.PORT || 3000
 
 var tone_analyzer = new ToneAnalyzerV3({
     username: "229ab9be-387c-4cab-a4dd-5cd3716f3683",
@@ -22,26 +23,10 @@ var VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3'
 
 var visual_recognition = new VisualRecognitionV3({
   api_key: '575a6e4e5aba5732305b869eb77d5d698150c8a7',
-  version_date: '2017-07-06'
+  version_date: '2017-07-06',
 });
 
-// download('http://gulfnews.com/news/gulf/qatar/qatar-defiance-shows-its-support-to-terror-1.2054764').then(data => {
-//     fs.writeFileSync('dist/foo.jpg', data);
-// });
-
-// var params = {
-//   images_file: fs.createReadStream('./server/car.jpg')
-// };
-//
-// visual_recognition.classify(params, function(err, res) {
-//   if (err)
-//     console.log(err);
-//   else
-//     console.log(JSON.stringify(res, null, 2));
-// });
-
-var src = `Allah (ta’ala) said, They thought that their fortresses would protect them from Allah but Allah came upon them from where they had not expected, and He cast terror into their hearts so they destroyed their houses by their own hands and the hands of the believers. So take warning, O people of vision. In a blessed battle whose causes of success were enabled by Allah, a group of believers from the soldiers of the Caliphate (may Allah strengthen and support it) set out targeting the capital of prostitution and vice, the lead carrier of the cross in Europe — Paris. This group of believers were youth who divorced the worldly life and advanced towards their enemy hoping to be killed for Allah’s sake, doing so in support of His religion, His Prophet (blessing and peace be upon him), and His allies. They did so in spite of His enemies. Thus, they were truthful with Allah — we consider them so — and Allah granted victory upon their hands and cast terror into the hearts of the crusaders in their very own homeland. And so eight brothers equipped with explosive belts and assault rifles attacked precisely chosen targets in the center of the capital of France. These targets included the Stade de France stadium during a soccer match — between the teams of Germany and France, both of which are crusader nations — attended by the imbecile of France (Francois Hollande). The targets included the Bataclan theatre for exhibitions, where hundreds of pagans gathered for a concert of prostitution and vice. There were also simultaneous attacks on other targets in the tenth, eleventh, and eighteenth districts, and elsewhere. Paris was thereby shaken beneath the crusaders’ feet, who were constricted by its streets. The result of the attacks was the deaths of no less than two hundred crusaders and the wounding of even more. All praise, grace, and favor belong to Allah. Allah blessed our brothers and granted them what they desired. They detonated their explosive belts in the masses of the disbelievers after finishing all their ammunition. We ask Allah to accept them amongst the martyrs and to allow us to follow them. Let France and all nations following its path know that they will continue to be at the top of the target list for the Islamic State and that the scent of death will not leave their nostrils as long as they partake in the crusader campaign, as long as they dare to curse our Prophet (blessings and peace be upon him), and as long as they boast about their war against Islam in France and their strikes against Muslims in the lands of the Caliphate with their jets, which were of no avail to them in the filthy streets and alleys of Paris. Indeed, this is just the beginning. It is also a warning for any who wish to take heed. Allah is the greatest. (And to Allah belongs all honor, and to His Messenger, and to the believers, but the hypocrites do not know). With the will of God, with the support of our people, with all our national capacity, we will bring them to their knees and give them all the necessary response. “The executor of the attack on the Indonesian police gathering in Jakarta was an Islamic State fighter” "The perpetrator of the attacks yesterday in front of the British parliament in London is an Islamic State soldier and he carried out the operation in response to calls to target citizens of the coalition," "Islamic State fighters carried out the Manila attack in the Philippines," "The armed attack that targeted a gay night club in the city of Orlando in the American state of Florida which left over 100 people dead or injured was carried out by an Islamic State fighter," Amaq Aamaq Amaaq al-Nabaa Syria Levant Iraq The Isis-linked Aamaq news agency said the attack was carried out by a “heroic soldier of the caliphate” who attacked the nightclub “where Christians were celebrating their pagan feast”. “We let infidel Turkey know that the blood of Muslims that is being shed by its airstrikes and artillery shelling will turn into fire on its territories,” the Daesh infidels fuck fuck rape rape statement said. “There are secular and non-Islamic schools and universities in our country, which serve to provide our youth with education that leads them to simply fall into the trap of their enemy and convert to their religions,” Ali Dhere said. “They make you love their behaviors, religion and history and hide the history of Islam.” terror terrorism holy war jihad suicide bomb infidel `
-
+src = `Allah (ta’ala) fortresses protect terror hearts destroyed their houses by their own hands believers. So take warning vision.blessed battle soldiers of the Caliphate (may Allah strengthen and support it) targeting the capital of prostitution and vice the cross in Europe — Paris. youth divorced the worldly life enemy hoping to be killed for Allah’s sakeHis enemies. truthful Allah victory cast terror hearts crusaders homeland.explosive belts assault rifles attacked targets crusader imbecile prostitution and vice crusaders detonated explosive belts disbelievers ammunition. martyrs curse Prophet (blessings and peace be upon him), war against Islam Caliphate. Allah is the greatest.“The executor attack Islamic State fighter”perpetrator attacks parliament Islamic State soldier operation response citizens coalition, Islamic State fighters attack armed attack targeted gay night club Orlando America people dead or injured Islamic State fighterParis, Manila, London, Syria Amaq Aamaq Amaaq al-Nabaa Syria Levant Iraq Isis-linked Aamaq attack “heroic soldier of the caliphate” attacked nightclub Christians celebratinginfidel Turkey blood Muslims airstrikes artillery shelling fire territoriessecular non-Islamic youth fall into the trap enemy convert their religionslove their behaviors, religion and history and hide the history of Islam. terror terrorism holy war jihad suicide bomb infidel `
 
 function eq(a, b){
     var l = (a < b) ? a.length : b.length
@@ -77,7 +62,6 @@ function matcher(a, b){
     return matches
 }
 
-
 src = src.toLowerCase()
 var srcTokens = src.split(" ")
 var parsedSrc = sw.removeStopwords(srcTokens)
@@ -86,11 +70,9 @@ app.use(bodyParser.json())
 var data
 var html
 var inputMatchSrc, srcTokensHit, fear, disgust, tone, anger, emotionalRange
+
 app.post('/', (req, res) => {
-
     var url = req.body.url
-
-
     fetch(url)
         .then(function(res) {
             return res.text()
@@ -99,13 +81,36 @@ app.post('/', (req, res) => {
 
             scrape({
                 urls: [url],
-                directory: './server/img.jpg',
+                directory: './server/img',
                 sources: [
                     {selector: 'img', attr: 'src'}
                 ]
-            }).then().catch(console.log);
-
+            }).then(function (){
+                // var dimensions = sizeOf('images/*.jpg');
+                //     console.log(dimensions.width, dimensions.height);
+            //     var params = {
+            //         images_file: fs.createReadStream('./server/images'),
+            //         classifier_ids: ['Terrorism2_1310302581'],
+            //         owners: ["me"],
+            //         threshold: 0.0
+            //     }
+            //
+            // visual_recognition.classify(params, function(err, res) {
+            //     if (err)
+            //         console.log(err)
+            //     else
+            //     {
+            //         // var is = res.images[0].classifiers[0].classes[0].score
+            //         // var nazi = res.images[0].classifiers[0].classes[1].score
+            //         // var violence = res.images[0].classifiers[0].classes[2].score
+            //         // imageClass = {
+            //         //     is, nazi, violence
+            //         // }
+            //         // console.log(imageClass)
+            //     }})
+            }).catch(console.log)
             var input = data.text
+            console.log("data", input)
             var inputTokens = input.split(" ")
             var parsedInput = sw.removeStopwords(inputTokens)
 
@@ -129,19 +134,13 @@ app.post('/', (req, res) => {
                     console.log('Disgust', disgust)
                     console.log('Anger', anger)
                     console.log('Emotion', emotionalRange)
+
+                    res.header('Access-Control-Allow-Origin', "*");
                     res.status(200).send({inputMatchSrc, srcTokensHit, fear, disgust, anger, emotionalRange})
                 }
             })
-
             console.log("Done...")
-    });
-
-    //     res.send(doc)
-    //     console.log("Sent Response")
-    // }, (e) => {
-    //     res.status(400).send(e)
-    // })
-})
+    })})
 
 app.listen(port, () => {
     console.log(`Started on port ${port}`)
