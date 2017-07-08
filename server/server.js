@@ -68,9 +68,9 @@ function analyseScores(scores){
     disgust_factor = scores.disgust >= 0.50;
     anger_factor = scores.anger >= 0.50;
 
-    sum = fear_factor + disgust_factor + anger_factor;
+    sum = scores.fear  + scores.disgust + scores.anger;
 
-    var max = Math.max(fear_factor, disgust_factor, anger_factor);
+    var max = Math.max(scores.fear , scores.disgust, scores.anger);
 
 
     if (max >= 0.5){
@@ -97,13 +97,13 @@ templates = {
 
 function prepareResponse(certainty){
     var response = '';
-    if (certainty.tone_certainty >= 0.50){
+    if (certainty.tone_certainty >= 0.45){
         response += templates.tone_notok;
     }
     else{
         response += templates.tone_ok;
     }
-    if (certainty.keyword_certainty >= 0.50){
+    if (certainty.keyword_certainty >= 0.40){
         response += templates.txt_notok;
     }
     else{
